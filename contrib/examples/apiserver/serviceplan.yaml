@@ -10,4 +10,4 @@ spec:
   description: "plan description"
   free: true
   serviceClassRef:
-    name: d35b55b2-b1fd-4123-8045-5b9c619cb629
+    name: d0fe444d-5656-4c7a-ba1b-6c5884eefbb7

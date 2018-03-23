@@ -17,10 +17,12 @@ limitations under the License.
 package v1beta1
 
 import (
+	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 )
 
 // GroupName is the group name use in this package
@@ -66,6 +68,14 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddFieldLabelConversionFunc("servicecatalog.k8s.io/v1beta1", "ClusterServiceClass", ClusterServiceClassFieldLabelConversionFunc)
 	scheme.AddFieldLabelConversionFunc("servicecatalog.k8s.io/v1beta1", "ClusterServicePlan", ClusterServicePlanFieldLabelConversionFunc)
 	scheme.AddFieldLabelConversionFunc("servicecatalog.k8s.io/v1beta1", "ServiceInstance", ServiceInstanceFieldLabelConversionFunc)
+
+	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.NamespacedServiceBroker) {
+		scheme.AddKnownTypes(SchemeGroupVersion,
+			&ServicePlanList{},
+			&ServicePlan{},
+		)
+		scheme.AddFieldLabelConversionFunc("servicecatalog.k8s.io/v1beta1", "ServicePlan", ServicePlanFieldLabelConversionFunc)
+	}
 
 	return nil
 }
