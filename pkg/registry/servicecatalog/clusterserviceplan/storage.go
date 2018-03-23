@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package serviceplan
+package clusterserviceplan
 
 import (
 	"errors"
@@ -35,15 +35,15 @@ import (
 )
 
 var (
-	errNotAServicePlan = errors.New("not a ServicePlan")
+	errNotAClusterServicePlan = errors.New("not a ClusterServicePlan")
 )
 
-// NewSingular returns a new shell of a service ServicePlan, according to the given namespace and
+// NewSingular returns a new shell of a service ClusterServicePlan, according to the given namespace and
 // name
 func NewSingular(ns, name string) runtime.Object {
-	return &servicecatalog.ServicePlan{
+	return &servicecatalog.ClusterServicePlan{
 		TypeMeta: metav1.TypeMeta{
-			Kind: "ServicePlan",
+			Kind: "ClusterServicePlan",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
@@ -52,26 +52,26 @@ func NewSingular(ns, name string) runtime.Object {
 	}
 }
 
-// EmptyObject returns an empty ServicePlan
+// EmptyObject returns an empty ClusterServicePlan
 func EmptyObject() runtime.Object {
-	return &servicecatalog.ServicePlan{}
+	return &servicecatalog.ClusterServicePlan{}
 }
 
-// NewList returns a new shell of a ServicePlan list
+// NewList returns a new shell of a ClusterServicePlan list
 func NewList() runtime.Object {
-	return &servicecatalog.ServicePlanList{
+	return &servicecatalog.ClusterServicePlanList{
 		TypeMeta: metav1.TypeMeta{
-			Kind: "ServicePlanList",
+			Kind: "ClusterServicePlanList",
 		},
-		Items: []servicecatalog.ServicePlan{},
+		Items: []servicecatalog.ClusterServicePlan{},
 	}
 }
 
-// CheckObject returns a non-nil error if obj is not a ServicePlan object
+// CheckObject returns a non-nil error if obj is not a ClusterServicePlan	 object
 func CheckObject(obj runtime.Object) error {
-	_, ok := obj.(*servicecatalog.ServicePlan)
+	_, ok := obj.(*servicecatalog.ClusterServicePlan)
 	if !ok {
-		return errNotAServicePlan
+		return errNotAClusterServicePlan
 	}
 	return nil
 }
@@ -87,7 +87,7 @@ func Match(label labels.Selector, field fields.Selector) storage.SelectionPredic
 }
 
 // toSelectableFields returns a field set that represents the object for matching purposes.
-func toSelectableFields(servicePlan *servicecatalog.ServicePlan) fields.Set {
+func toSelectableFields(servicePlan *servicecatalog.ClusterServicePlan) fields.Set {
 	// The purpose of allocation with a given number of elements is to reduce
 	// amount of allocations needed to create the fields.Set. If you add any
 	// field here or the number of object-meta related fields changes, this should
@@ -95,8 +95,8 @@ func toSelectableFields(servicePlan *servicecatalog.ServicePlan) fields.Set {
 	// You also need to modify
 	// pkg/apis/servicecatalog/v1beta1/conversion[_test].go
 	spSpecificFieldsSet := make(fields.Set, 4)
-	spSpecificFieldsSet["spec.serviceBrokerName"] = servicePlan.Spec.ServiceBrokerName
-	spSpecificFieldsSet["spec.serviceClassRef.name"] = servicePlan.Spec.ServiceClassRef.Name
+	spSpecificFieldsSet["spec.clusterServiceBrokerName"] = servicePlan.Spec.ClusterServiceBrokerName
+	spSpecificFieldsSet["spec.clusterServiceClassRef.name"] = servicePlan.Spec.ClusterServiceClassRef.Name
 	spSpecificFieldsSet["spec.externalName"] = servicePlan.Spec.ExternalName
 	spSpecificFieldsSet["spec.externalID"] = servicePlan.Spec.ExternalID
 	return generic.AddObjectMetaFieldsSet(spSpecificFieldsSet, &servicePlan.ObjectMeta, true)
@@ -104,22 +104,22 @@ func toSelectableFields(servicePlan *servicecatalog.ServicePlan) fields.Set {
 
 // GetAttrs returns labels and fields of a given object for filtering purposes.
 func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, bool, error) {
-	servicePlan, ok := obj.(*servicecatalog.ServicePlan)
+	clusterServicePlan, ok := obj.(*servicecatalog.ClusterServicePlan)
 	if !ok {
-		return nil, nil, false, fmt.Errorf("given object is not a ServicePlan")
+		return nil, nil, false, fmt.Errorf("given object is not a ClusterServicePlan")
 	}
-	return labels.Set(servicePlan.ObjectMeta.Labels), toSelectableFields(servicePlan), servicePlan.Initializers != nil, nil
+	return labels.Set(clusterServicePlan.ObjectMeta.Labels), toSelectableFields(clusterServicePlan), clusterServicePlan.Initializers != nil, nil
 }
 
 // NewStorage creates a new rest.Storage responsible for accessing
-// ServicePlan resources
+// ClusterServicePlan resources
 func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
 	prefix := "/" + opts.ResourcePrefix()
 
 	storageInterface, dFunc := opts.GetStorage(
-		&servicecatalog.ServicePlan{},
+		&servicecatalog.ClusterServicePlan{},
 		prefix,
-		servicePlanRESTStrategies,
+		clusterServicePlanRESTStrategies,
 		NewList,
 		nil,
 		storage.NoTriggerPublisher,
@@ -137,17 +137,17 @@ func NewStorage(opts server.Options) (rest.Storage, rest.Storage) {
 		// Used to match objects based on labels/fields for list.
 		PredicateFunc: Match,
 		// DefaultQualifiedResource should always be plural
-		DefaultQualifiedResource: servicecatalog.Resource("serviceplans"),
+		DefaultQualifiedResource: servicecatalog.Resource("clusterserviceplans"),
 
-		CreateStrategy: servicePlanRESTStrategies,
-		UpdateStrategy: servicePlanRESTStrategies,
-		DeleteStrategy: servicePlanRESTStrategies,
+		CreateStrategy: clusterServicePlanRESTStrategies,
+		UpdateStrategy: clusterServicePlanRESTStrategies,
+		DeleteStrategy: clusterServicePlanRESTStrategies,
 		Storage:        storageInterface,
 		DestroyFunc:    dFunc,
 	}
 
 	statusStore := store
-	statusStore.UpdateStrategy = servicePlanStatusUpdateStrategy
+	statusStore.UpdateStrategy = clusterServicePlanStatusUpdateStrategy
 
 	return &store, &StatusREST{&statusStore}
 }
@@ -159,9 +159,9 @@ type StatusREST struct {
 	store *registry.Store
 }
 
-// New returns a new ServicePlan
+// New returns a new ClusterServicePlan
 func (r *StatusREST) New() runtime.Object {
-	return &servicecatalog.ServicePlan{}
+	return &servicecatalog.ClusterServicePlan{}
 }
 
 // Get retrieves the object from the storage. It is required to support Patch

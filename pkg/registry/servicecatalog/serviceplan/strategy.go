@@ -70,20 +70,20 @@ var (
 
 // Canonicalize does not transform a servicePlan.
 func (servicePlanRESTStrategy) Canonicalize(obj runtime.Object) {
-	_, ok := obj.(*sc.ClusterServicePlan)
+	_, ok := obj.(*sc.ServicePlan)
 	if !ok {
 		glog.Fatal("received a non-servicePlan object to create")
 	}
 }
 
-// NamespaceScoped returns false as servicePlans are not scoped to a namespace.
+// NamespaceScoped returns true as servicePlans are scoped to a namespace.
 func (servicePlanRESTStrategy) NamespaceScoped() bool {
-	return false
+	return true
 }
 
 // PrepareForCreate receives the incoming ServicePlan.
 func (servicePlanRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
-	_, ok := obj.(*sc.ClusterServicePlan)
+	_, ok := obj.(*sc.ServicePlan)
 	if !ok {
 		glog.Fatal("received a non-servicePlan object to create")
 	}
@@ -91,7 +91,7 @@ func (servicePlanRESTStrategy) PrepareForCreate(ctx genericapirequest.Context, o
 }
 
 func (servicePlanRESTStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
-	return scv.ValidateClusterServicePlan(obj.(*sc.ClusterServicePlan))
+	return scv.ValidateServicePlan(obj.(*sc.ServicePlan))
 }
 
 func (servicePlanRESTStrategy) AllowCreateOnUpdate() bool {
@@ -103,38 +103,38 @@ func (servicePlanRESTStrategy) AllowUnconditionalUpdate() bool {
 }
 
 func (servicePlanRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
-	newServicePlan, ok := new.(*sc.ClusterServicePlan)
+	newServicePlan, ok := new.(*sc.ServicePlan)
 	if !ok {
 		glog.Fatal("received a non-servicePlan object to update to")
 	}
-	oldServicePlan, ok := old.(*sc.ClusterServicePlan)
+	oldServicePlan, ok := old.(*sc.ServicePlan)
 	if !ok {
 		glog.Fatal("received a non-servicePlan object to update from")
 	}
 
-	newServicePlan.Spec.ClusterServiceClassRef = oldServicePlan.Spec.ClusterServiceClassRef
-	newServicePlan.Spec.ClusterServiceBrokerName = oldServicePlan.Spec.ClusterServiceBrokerName
+	newServicePlan.Spec.ServiceClassRef = oldServicePlan.Spec.ServiceClassRef
+	newServicePlan.Spec.ServiceBrokerName = oldServicePlan.Spec.ServiceBrokerName
 }
 
 func (servicePlanRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
-	newServicePlan, ok := new.(*sc.ClusterServicePlan)
+	newServicePlan, ok := new.(*sc.ServicePlan)
 	if !ok {
 		glog.Fatal("received a non-servicePlan object to validate to")
 	}
-	oldServicePlan, ok := old.(*sc.ClusterServicePlan)
+	oldServicePlan, ok := old.(*sc.ServicePlan)
 	if !ok {
 		glog.Fatal("received a non-servicePlan object to validate from")
 	}
 
-	return scv.ValidateClusterServicePlanUpdate(newServicePlan, oldServicePlan)
+	return scv.ValidateServicePlanUpdate(newServicePlan, oldServicePlan)
 }
 
 func (servicePlanStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Context, new, old runtime.Object) {
-	newServiceClass, ok := new.(*sc.ClusterServicePlan)
+	newServiceClass, ok := new.(*sc.ServicePlan)
 	if !ok {
 		glog.Fatal("received a non-servicePlan object to update to")
 	}
-	oldServiceClass, ok := old.(*sc.ClusterServicePlan)
+	oldServiceClass, ok := old.(*sc.ServicePlan)
 	if !ok {
 		glog.Fatal("received a non-servicePlan object to update from")
 	}
@@ -143,14 +143,14 @@ func (servicePlanStatusRESTStrategy) PrepareForUpdate(ctx genericapirequest.Cont
 }
 
 func (servicePlanStatusRESTStrategy) ValidateUpdate(ctx genericapirequest.Context, new, old runtime.Object) field.ErrorList {
-	newServicePlan, ok := new.(*sc.ClusterServicePlan)
+	newServicePlan, ok := new.(*sc.ServicePlan)
 	if !ok {
 		glog.Fatal("received a non-servicePlan object to validate to")
 	}
-	oldServicePlan, ok := old.(*sc.ClusterServicePlan)
+	oldServicePlan, ok := old.(*sc.ServicePlan)
 	if !ok {
 		glog.Fatal("received a non-servicePlan object to validate from")
 	}
 
-	return scv.ValidateClusterServicePlanUpdate(newServicePlan, oldServicePlan)
+	return scv.ValidateServicePlanUpdate(newServicePlan, oldServicePlan)
 }

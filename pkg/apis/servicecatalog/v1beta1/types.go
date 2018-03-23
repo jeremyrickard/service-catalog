@@ -340,7 +340,7 @@ type ClusterServiceClassStatus struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ClusterServicePlanList is a list of ServicePlans.
+// ClusterServicePlanList is a list of ClusterServicePlans.
 type ClusterServicePlanList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -352,7 +352,7 @@ type ClusterServicePlanList struct {
 // +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ClusterServicePlan represents a tier of a ServiceClass.
+// ClusterServicePlan represents a tier of a ClusterServiceClass.
 // +k8s:openapi-gen=x-kubernetes-print-columns:custom-columns=NAME:.metadata.name,EXTERNAL NAME:.spec.externalName,BROKER:.spec.clusterServiceBrokerName,CLASS:.spec.clusterServiceClassRef.name
 type ClusterServicePlan struct {
 	metav1.TypeMeta `json:",inline"`
@@ -362,11 +362,11 @@ type ClusterServicePlan struct {
 	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// Spec defines the behavior of the service plan.
+	// Spec defines the behavior of the ClusterServicePlan.
 	// +optional
 	Spec ClusterServicePlanSpec `json:"spec,omitempty"`
 
-	// Status represents the current status of the service plan.
+	// Status represents the current status of the ClusterServicePlan.
 	// +optional
 	Status ClusterServicePlanStatus `json:"status,omitempty"`
 }
@@ -432,7 +432,7 @@ type ClusterServicePlanSpec struct {
 	// that offers this ClusterServicePlan.
 	ClusterServiceBrokerName string `json:"clusterServiceBrokerName"`
 
-	// ClusterServiceClassRef is a reference to the service class that
+	// ClusterServiceClassRef is a reference to the ClusterServiceClass that
 	// owns this plan.
 	ClusterServiceClassRef ClusterObjectReference `json:"clusterServiceClassRef"`
 }
@@ -440,9 +440,68 @@ type ClusterServicePlanSpec struct {
 // ClusterServicePlanStatus represents status information about a
 // ClusterServicePlan.
 type ClusterServicePlanStatus struct {
+	CommonServicePlanStatus `json:",inline"`
+}
+
+// CommonServicePlanStatus represents status information about a
+// service plan types.
+type CommonServicePlanStatus struct {
 	// RemovedFromBrokerCatalog indicates that the broker removed the plan
 	// from its catalog.
 	RemovedFromBrokerCatalog bool `json:"removedFromBrokerCatalog"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ServicePlanList is a list of ServicePlans.
+type ServicePlanList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+
+	Items []ServicePlan `json:"items"`
+}
+
+// +genclient
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ServicePlan represents a tier of a ServiceClass.
+// +k8s:openapi-gen=x-kubernetes-print-columns:custom-columns=NAME:.metadata.name,EXTERNAL NAME:.spec.externalName,BROKER:.spec.serviceBrokerName,CLASS:.spec.serviceClassRef.name
+type ServicePlan struct {
+	metav1.TypeMeta `json:",inline"`
+
+	// The name of this resource in etcd is in ObjectMeta.Name.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// Spec defines the behavior of the ServicePlan.
+	// +optional
+	Spec ServicePlanSpec `json:"spec,omitempty"`
+
+	// Status represents the current status of the ServicePlan.
+	// +optional
+	Status ServicePlanStatus `json:"status,omitempty"`
+}
+
+// ServicePlanSpec represents details about a ServicePlan.
+type ServicePlanSpec struct {
+	// CommonServicePlanSpec contains the common details of this ServicePlan
+	CommonServicePlanSpec `json:",inline"`
+
+	// ServiceBrokerName is the name of the ServiceBroker
+	// that offers this ServicePlan.
+	ServiceBrokerName string `json:"serviceBrokerName"`
+
+	// ServiceClassRef is a reference to the ServiceClass that
+	// owns this plan.
+	ServiceClassRef ClusterObjectReference `json:"serviceClassRef"`
+}
+
+// ServicePlanStatus represents status information about a
+// ServicePlan.
+type ServicePlanStatus struct {
+	CommonServicePlanStatus `json:",inline"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

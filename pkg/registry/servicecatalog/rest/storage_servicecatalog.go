@@ -23,6 +23,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/binding"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/broker"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterserviceclass"
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterserviceplan"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/instance"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceplan"
@@ -103,7 +104,24 @@ func (p StorageProvider) v1beta1Storage(
 		p.StorageType,
 	)
 
-	servicePlanRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("clusterserviceplans"))
+	clusterServicePlanRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("clusterserviceplans"))
+	if err != nil {
+		return nil, err
+	}
+	clusterServicePlanOpts := server.NewOptions(
+		etcd.Options{
+			RESTOptions:   clusterServicePlanRESTOptions,
+			Capacity:      1000,
+			ObjectType:    clusterserviceplan.EmptyObject(),
+			ScopeStrategy: clusterserviceplan.NewScopeStrategy(),
+			NewListFunc:   clusterserviceplan.NewList,
+			GetAttrsFunc:  clusterserviceplan.GetAttrs,
+			Trigger:       storage.NoTriggerPublisher,
+		},
+		p.StorageType,
+	)
+
+	servicePlanRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("serviceplans"))
 	if err != nil {
 		return nil, err
 	}
@@ -156,6 +174,7 @@ func (p StorageProvider) v1beta1Storage(
 
 	brokerStorage, brokerStatusStorage := broker.NewStorage(*brokerOpts)
 	clusterServiceClassStorage, clusterServiceClassStatusStorage := clusterserviceclass.NewStorage(*clusterServiceClassOpts)
+	clusterServicePlanStorage, clusterServicePlanStatusStorage := clusterserviceplan.NewStorage(*clusterServicePlanOpts)
 	servicePlanStorage, servicePlanStatusStorage := serviceplan.NewStorage(*servicePlanOpts)
 	instanceStorage, instanceStatusStorage, instanceReferencesStorage := instance.NewStorage(*instanceOpts)
 	bindingStorage, bindingStatusStorage, err := binding.NewStorage(*bindingsOpts)
@@ -168,8 +187,10 @@ func (p StorageProvider) v1beta1Storage(
 		"clusterservicebrokers/status": brokerStatusStorage,
 		"clusterserviceclasses":        clusterServiceClassStorage,
 		"clusterserviceclasses/status": clusterServiceClassStatusStorage,
-		"clusterserviceplans":          servicePlanStorage,
-		"clusterserviceplans/status":   servicePlanStatusStorage,
+		"clusterserviceplans":          clusterServicePlanStorage,
+		"clusterserviceplans/status":   clusterServicePlanStatusStorage,
+		"serviceplans":                 servicePlanStorage,
+		"serviceplans/status":          servicePlanStatusStorage,
 		"serviceinstances":             instanceStorage,
 		"serviceinstances/status":      instanceStatusStorage,
 		"serviceinstances/reference":   instanceReferencesStorage,

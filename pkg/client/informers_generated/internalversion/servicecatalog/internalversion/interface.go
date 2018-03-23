@@ -34,6 +34,8 @@ type Interface interface {
 	ServiceBindings() ServiceBindingInformer
 	// ServiceInstances returns a ServiceInstanceInformer.
 	ServiceInstances() ServiceInstanceInformer
+	// ServicePlans returns a ServicePlanInformer.
+	ServicePlans() ServicePlanInformer
 }
 
 type version struct {
@@ -70,4 +72,9 @@ func (v *version) ServiceBindings() ServiceBindingInformer {
 // ServiceInstances returns a ServiceInstanceInformer.
 func (v *version) ServiceInstances() ServiceInstanceInformer {
 	return &serviceInstanceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// ServicePlans returns a ServicePlanInformer.
+func (v *version) ServicePlans() ServicePlanInformer {
+	return &servicePlanInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

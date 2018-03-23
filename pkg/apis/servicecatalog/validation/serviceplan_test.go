@@ -27,16 +27,36 @@ import (
 func validClusterServicePlan() *servicecatalog.ClusterServicePlan {
 	return &servicecatalog.ClusterServicePlan{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-plan",
+			Name: "test-clusterserviceplan",
 		},
 		Spec: servicecatalog.ClusterServicePlanSpec{
 			CommonServicePlanSpec: servicecatalog.CommonServicePlanSpec{
-				ExternalName: "test-plan",
+				ExternalName: "test-clusterserviceplan",
 				ExternalID:   "40d-0983-1b89",
 				Description:  "plan description",
 			},
 			ClusterServiceBrokerName: "test-broker",
 			ClusterServiceClassRef: servicecatalog.ClusterObjectReference{
+				Name: "test-clusterservice-class",
+			},
+		},
+	}
+}
+
+func validServicePlan() *servicecatalog.ServicePlan {
+	return &servicecatalog.ServicePlan{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-serviceplan",
+			Namespace: "test",
+		},
+		Spec: servicecatalog.ServicePlanSpec{
+			CommonServicePlanSpec: servicecatalog.CommonServicePlanSpec{
+				ExternalName: "test-serviceplan",
+				ExternalID:   "977-43fb-27e6",
+				Description:  "plan description",
+			},
+			ServiceBrokerName: "test-broker",
+			ServiceClassRef: servicecatalog.ClusterObjectReference{
 				Name: "test-service-class",
 			},
 		},
@@ -50,12 +70,12 @@ func TestValidateClusterServicePlan(t *testing.T) {
 		valid       bool
 	}{
 		{
-			name:        "valid servicePlan",
+			name:        "valid clusterServicePlan",
 			servicePlan: validClusterServicePlan(),
 			valid:       true,
 		},
 		{
-			name: "valid servicePlan - period in externalName",
+			name: "valid clusterServicePlan - period in externalName",
 			servicePlan: func() *servicecatalog.ClusterServicePlan {
 				s := validClusterServicePlan()
 				s.Spec.ExternalName = "test.plan"
@@ -157,7 +177,7 @@ func TestValidateClusterServicePlan(t *testing.T) {
 			valid: false,
 		},
 		{
-			name: "missing serviceclass reference",
+			name: "missing clusterServiceClass reference",
 			servicePlan: func() *servicecatalog.ClusterServicePlan {
 				s := validClusterServicePlan()
 				s.Spec.ClusterServiceClassRef.Name = ""
@@ -166,7 +186,7 @@ func TestValidateClusterServicePlan(t *testing.T) {
 			valid: false,
 		},
 		{
-			name: "bad serviceclass reference name",
+			name: "bad clusterServiceClass reference name",
 			servicePlan: func() *servicecatalog.ClusterServicePlan {
 				s := validClusterServicePlan()
 				s.Spec.ClusterServiceClassRef.Name = "%"
@@ -198,13 +218,13 @@ func TestValidateClusterServicePlanUpdate(t *testing.T) {
 		valid bool
 	}{
 		{
-			name:  "valid servicePlan update same content",
+			name:  "valid clusterServicePlan update same content",
 			old:   validClusterServicePlan(),
 			new:   validClusterServicePlan(),
 			valid: true,
 		},
 		{
-			name: "valid servicePlan update different content",
+			name: "valid clusterServicePlan update different content",
 			old:  validClusterServicePlan(),
 			new: func() *servicecatalog.ClusterServicePlan {
 				s := validClusterServicePlan()
@@ -214,7 +234,7 @@ func TestValidateClusterServicePlanUpdate(t *testing.T) {
 			valid: true,
 		},
 		{
-			name: "servicePlan changing external ID",
+			name: "clusterServicePlan changing external ID",
 			old:  validClusterServicePlan(),
 			new: func() *servicecatalog.ClusterServicePlan {
 				s := validClusterServicePlan()
@@ -229,6 +249,202 @@ func TestValidateClusterServicePlanUpdate(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			errs := ValidateClusterServicePlanUpdate(tc.new, tc.old)
+			t.Log(errs)
+			if len(errs) != 0 && tc.valid {
+				t.Errorf("%v: unexpected error: %v", tc.name, errs)
+			} else if len(errs) == 0 && !tc.valid {
+				t.Errorf("%v: unexpected success", tc.name)
+			}
+		})
+	}
+}
+
+func TestValidateServicePlan(t *testing.T) {
+	testCases := []struct {
+		name        string
+		servicePlan *servicecatalog.ServicePlan
+		valid       bool
+	}{
+		{
+			name:        "valid servicePlan",
+			servicePlan: validServicePlan(),
+			valid:       true,
+		},
+		{
+			name: "valid servicePlan - period in externalName",
+			servicePlan: func() *servicecatalog.ServicePlan {
+				s := validServicePlan()
+				s.Spec.ExternalName = "test.plan"
+				return s
+			}(),
+			valid: true,
+		},
+		{
+			name: "missing name",
+			servicePlan: func() *servicecatalog.ServicePlan {
+				s := validServicePlan()
+				s.Name = ""
+				return s
+			}(),
+			valid: false,
+		},
+		{
+			name: "bad name",
+			servicePlan: func() *servicecatalog.ServicePlan {
+				s := validServicePlan()
+				s.Name = "#"
+				return s
+			}(),
+			valid: false,
+		},
+		{
+			name: "bad externalName",
+			servicePlan: func() *servicecatalog.ServicePlan {
+				s := validServicePlan()
+				s.Spec.ExternalName = "#"
+				return s
+			}(),
+			valid: false,
+		},
+		{
+			name: "mixed case Name",
+			servicePlan: func() *servicecatalog.ServicePlan {
+				s := validServicePlan()
+				s.Name = "abcXYZ"
+				return s
+			}(),
+			valid: true,
+		},
+		{
+			name: "mixed case externalName",
+			servicePlan: func() *servicecatalog.ServicePlan {
+				s := validServicePlan()
+				s.Spec.ExternalName = "abcXYZ"
+				return s
+			}(),
+			valid: true,
+		},
+		{
+			name: "missing serviceBrokerName",
+			servicePlan: func() *servicecatalog.ServicePlan {
+				s := validServicePlan()
+				s.Spec.ServiceBrokerName = ""
+				return s
+			}(),
+			valid: false,
+		},
+		{
+			name: "missing externalName",
+			servicePlan: func() *servicecatalog.ServicePlan {
+				s := validServicePlan()
+				s.Spec.ExternalName = ""
+				return s
+			}(),
+			valid: false,
+		},
+		{
+			name: "missing external id",
+			servicePlan: func() *servicecatalog.ServicePlan {
+				s := validServicePlan()
+				s.Spec.ExternalID = ""
+				return s
+			}(),
+			valid: false,
+		},
+		{
+			// Note this is NOT due to the spec, this is due to
+			// a Kubernetes limitation. So, technically this restriction
+			// could cause a valid Broker to not work against Kube.
+			name: "external id too long",
+			servicePlan: func() *servicecatalog.ServicePlan {
+				s := validServicePlan()
+				s.Spec.ExternalID = "1234567890123456789012345678901234567890123456789012345678901234"
+				return s
+			}(),
+			valid: false,
+		},
+		{
+			name: "missing description",
+			servicePlan: func() *servicecatalog.ServicePlan {
+				s := validServicePlan()
+				s.Spec.Description = ""
+				return s
+			}(),
+			valid: false,
+		},
+		{
+			name: "missing serviceclass reference",
+			servicePlan: func() *servicecatalog.ServicePlan {
+				s := validServicePlan()
+				s.Spec.ServiceClassRef.Name = ""
+				return s
+			}(),
+			valid: false,
+		},
+		{
+			name: "bad serviceclass reference name",
+			servicePlan: func() *servicecatalog.ServicePlan {
+				s := validServicePlan()
+				s.Spec.ServiceClassRef.Name = "%"
+				return s
+			}(),
+			valid: false,
+		},
+	}
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			errs := ValidateServicePlan(tc.servicePlan)
+			t.Log(errs)
+			if len(errs) != 0 && tc.valid {
+				t.Errorf("%v: unexpected error: %v", tc.name, errs)
+			} else if len(errs) == 0 && !tc.valid {
+				t.Errorf("%v: unexpected success", tc.name)
+			}
+		})
+	}
+}
+
+func TestValidateServicePlanUpdate(t *testing.T) {
+	testCases := []struct {
+		name  string
+		old   *servicecatalog.ServicePlan
+		new   *servicecatalog.ServicePlan
+		valid bool
+	}{
+		{
+			name:  "valid servicePlan update same content",
+			old:   validServicePlan(),
+			new:   validServicePlan(),
+			valid: true,
+		},
+		{
+			name: "valid servicePlan update different content",
+			old:  validServicePlan(),
+			new: func() *servicecatalog.ServicePlan {
+				s := validServicePlan()
+				s.Spec.Description = "a new description cause it changed"
+				return s
+			}(),
+			valid: true,
+		},
+		{
+			name: "servicePlan changing external ID",
+			old:  validServicePlan(),
+			new: func() *servicecatalog.ServicePlan {
+				s := validServicePlan()
+				s.Spec.ExternalID = "something-else"
+				return s
+			}(),
+			valid: false,
+		},
+	}
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			errs := ValidateServicePlanUpdate(tc.new, tc.old)
 			t.Log(errs)
 			if len(errs) != 0 && tc.valid {
 				t.Errorf("%v: unexpected error: %v", tc.name, errs)

@@ -28,6 +28,7 @@ type ServicecatalogInterface interface {
 	ClusterServicePlansGetter
 	ServiceBindingsGetter
 	ServiceInstancesGetter
+	ServicePlansGetter
 }
 
 // ServicecatalogClient is used to interact with features provided by the servicecatalog.k8s.io group.
@@ -53,6 +54,10 @@ func (c *ServicecatalogClient) ServiceBindings(namespace string) ServiceBindingI
 
 func (c *ServicecatalogClient) ServiceInstances(namespace string) ServiceInstanceInterface {
 	return newServiceInstances(c, namespace)
+}
+
+func (c *ServicecatalogClient) ServicePlans(namespace string) ServicePlanInterface {
+	return newServicePlans(c, namespace)
 }
 
 // NewForConfig creates a new ServicecatalogClient for the given config.
