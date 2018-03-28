@@ -61,3 +61,17 @@ func ServiceInstanceFieldLabelConversionFunc(label, value string) (string, strin
 		return "", "", fmt.Errorf("field label not supported: %s", label)
 	}
 }
+
+// ServicePlanFieldLabelConversionFunc does not convert anything, just returns
+// what it's given for the supported fields, and errors for unsupported.
+func ServicePlanFieldLabelConversionFunc(label, value string) (string, string, error) {
+	switch label {
+	case "spec.externalID",
+		"spec.externalName",
+		"spec.serviceBrokerName",
+		"spec.serviceClassRef.name":
+		return label, value, nil
+	default:
+		return "", "", fmt.Errorf("field label not supported: %s", label)
+	}
+}

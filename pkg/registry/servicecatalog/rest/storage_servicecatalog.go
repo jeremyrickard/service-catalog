@@ -26,6 +26,7 @@ import (
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/clusterserviceplan"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/instance"
 	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/server"
+	"github.com/kubernetes-incubator/service-catalog/pkg/registry/servicecatalog/serviceplan"
 	"github.com/kubernetes-incubator/service-catalog/pkg/storage/etcd"
 	"k8s.io/apiserver/pkg/registry/generic"
 	"k8s.io/apiserver/pkg/registry/rest"
@@ -33,6 +34,10 @@ import (
 	serverstorage "k8s.io/apiserver/pkg/server/storage"
 	"k8s.io/apiserver/pkg/storage"
 	restclient "k8s.io/client-go/rest"
+
+	scfeatures "github.com/kubernetes-incubator/service-catalog/pkg/features"
+
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 )
 
 // StorageProvider provides a factory method to create a new APIGroupInfo for
@@ -163,7 +168,7 @@ func (p StorageProvider) v1beta1Storage(
 		return nil, err
 	}
 
-	return map[string]rest.Storage{
+	storageMap := map[string]rest.Storage{
 		"clusterservicebrokers":        brokerStorage,
 		"clusterservicebrokers/status": brokerStatusStorage,
 		"clusterserviceclasses":        clusterServiceClassStorage,
@@ -175,7 +180,33 @@ func (p StorageProvider) v1beta1Storage(
 		"serviceinstances/reference":   instanceReferencesStorage,
 		"servicebindings":              bindingStorage,
 		"servicebindings/status":       bindingStatusStorage,
-	}, nil
+	}
+
+	if utilfeature.DefaultFeatureGate.Enabled(scfeatures.NamespacedServiceBroker) {
+
+		servicePlanRESTOptions, err := restOptionsGetter.GetRESTOptions(servicecatalog.Resource("serviceplans"))
+		if err != nil {
+			return nil, err
+		}
+		servicePlanOpts := server.NewOptions(
+			etcd.Options{
+				RESTOptions:   servicePlanRESTOptions,
+				Capacity:      1000,
+				ObjectType:    serviceplan.EmptyObject(),
+				ScopeStrategy: serviceplan.NewScopeStrategy(),
+				NewListFunc:   serviceplan.NewList,
+				GetAttrsFunc:  serviceplan.GetAttrs,
+				Trigger:       storage.NoTriggerPublisher,
+			},
+			p.StorageType,
+		)
+
+		servicePlanStorage, servicePlanStatusStorage := serviceplan.NewStorage(*servicePlanOpts)
+
+		storageMap["serviceplans"] = servicePlanStorage
+		storageMap["serviceplans/status"] = servicePlanStatusStorage
+	}
+	return storageMap, nil
 }
 
 // GroupName returns the API group name.

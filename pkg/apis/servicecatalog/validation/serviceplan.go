@@ -17,93 +17,57 @@ limitations under the License.
 package validation
 
 import (
-	"regexp"
-
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
-	utilvalidation "k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	sc "github.com/kubernetes-incubator/service-catalog/pkg/apis/servicecatalog"
 )
 
-const servicePlanNameFmt string = `[-.a-zA-Z0-9]+`
-const servicePlanNameMaxLength int = 63
-
-var servicePlanNameRegexp = regexp.MustCompile("^" + servicePlanNameFmt + "$")
-
-// validateServicePlanName is the validation function for ServicePlan names.
-func validateServicePlanName(value string, prefix bool) []string {
-	var errs []string
-	if len(value) > servicePlanNameMaxLength {
-		errs = append(errs, utilvalidation.MaxLenError(servicePlanNameMaxLength))
-	}
-	if !servicePlanNameRegexp.MatchString(value) {
-		errs = append(errs, utilvalidation.RegexError(servicePlanNameFmt, "plan-name-40d-0983-1b89"))
-	}
-
-	return errs
+// ValidateServicePlan validates a ServicePlan and returns a list of errors.
+func ValidateServicePlan(serviceplan *sc.ServicePlan) field.ErrorList {
+	return validateServicePlan(serviceplan)
 }
 
-// ValidateClusterServicePlan validates a ClusterServicePlan and returns a list of errors.
-func ValidateClusterServicePlan(serviceplan *sc.ClusterServicePlan) field.ErrorList {
-	return internalValidateClusterServicePlan(serviceplan)
-}
-
-func internalValidateClusterServicePlan(serviceplan *sc.ClusterServicePlan) field.ErrorList {
+func validateServicePlan(serviceplan *sc.ServicePlan) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	allErrs = append(allErrs,
 		apivalidation.ValidateObjectMeta(
 			&serviceplan.ObjectMeta,
-			false, /* namespace required */
-			validateServicePlanName,
+			true, /* namespace required */
+			validateCommonServicePlanName,
 			field.NewPath("metadata"))...)
 
-	allErrs = append(allErrs, validateClusterServicePlanSpec(&serviceplan.Spec, field.NewPath("spec"))...)
+	allErrs = append(allErrs, validateServicePlanSpec(&serviceplan.Spec, field.NewPath("spec"))...)
 	return allErrs
 }
 
-func validateClusterServicePlanSpec(spec *sc.ClusterServicePlanSpec, fldPath *field.Path) field.ErrorList {
+func validateServicePlanSpec(spec *sc.ServicePlanSpec, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	if "" == spec.ClusterServiceBrokerName {
-		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServiceBrokerName"), "clusterServiceBrokerName is required"))
+	for _, msg := range validateCommonServiceClassName(spec.ServiceClassRef.Name, false /* prefix */) {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("serviceClassRef", "name"), spec.ServiceClassRef.Name, msg))
 	}
 
-	if "" == spec.ExternalID {
-		allErrs = append(allErrs, field.Required(fldPath.Child("externalID"), "externalID is required"))
+	if "" == spec.ServiceBrokerName {
+		allErrs = append(allErrs, field.Required(fldPath.Child("serviceBrokerName"), "serviceBrokerName is required"))
 	}
 
-	if "" == spec.Description {
-		allErrs = append(allErrs, field.Required(fldPath.Child("description"), "description is required"))
+	if "" == spec.ServiceClassRef.Name {
+		allErrs = append(allErrs, field.Required(fldPath.Child("serviceClassRef"), "an owning serviceclass is required"))
 	}
 
-	if "" == spec.ClusterServiceClassRef.Name {
-		allErrs = append(allErrs, field.Required(fldPath.Child("clusterServiceClassRef"), "an owning serviceclass is required"))
-	}
-
-	for _, msg := range validateServicePlanName(spec.ExternalName, false /* prefix */) {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("externalName"), spec.ExternalName, msg))
-	}
-
-	for _, msg := range validateExternalID(spec.ExternalID) {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("externalID"), spec.ExternalID, msg))
-	}
-
-	for _, msg := range validateCommonServiceClassName(spec.ClusterServiceClassRef.Name, false /* prefix */) {
-		allErrs = append(allErrs, field.Invalid(fldPath.Child("clusterServiceClassRef", "name"), spec.ClusterServiceClassRef.Name, msg))
-	}
-
+	allErrs = append(allErrs, validateCommonServicePlanSpec(spec.CommonServicePlanSpec, fldPath)...)
 	return allErrs
 }
 
-// ValidateClusterServicePlanUpdate checks that when changing from an older
-// ClusterServicePlan to a newer ClusterServicePlan is okay.
-func ValidateClusterServicePlanUpdate(new *sc.ClusterServicePlan, old *sc.ClusterServicePlan) field.ErrorList {
+// ValidateServicePlanUpdate checks that when changing from an older
+// ServicePlan to a newer ServicePlan is okay.
+func ValidateServicePlanUpdate(new *sc.ServicePlan, old *sc.ServicePlan) field.ErrorList {
 	allErrs := field.ErrorList{}
-	allErrs = append(allErrs, internalValidateClusterServicePlan(new)...)
+	allErrs = append(allErrs, validateServicePlan(new)...)
 	if new.Spec.ExternalID != old.Spec.ExternalID {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("externalID"), new.Spec.ExternalID, "externalID cannot change when updating a ClusterServicePlan"))
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("externalID"), new.Spec.ExternalID, "externalID cannot change when updating a ServicePlan"))
 	}
 	return allErrs
 }
