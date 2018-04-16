@@ -94,7 +94,7 @@ func WritePlanList(w io.Writer, outputFormat string, plans []v1beta1.ClusterServ
 	case "json":
 		writePlanListJSON(w, plans)
 	case "yaml":
-		writePlanListJSON(w, plans)
+		writePlanListYAML(w, plans)
 	case "table":
 		writePlanListTable(w, plans, classNames)
 	}
@@ -117,7 +117,7 @@ func WritePlan(w io.Writer, outputFormat string, plan v1beta1.ClusterServicePlan
 	case "json":
 		writePlanJSON(w, plan)
 	case "yaml":
-		writePlanJSON(w, plan)
+		writePlanYAML(w, plan)
 	case "table":
 		classNames := map[string]string{}
 		classNames[class.Name] = class.Spec.ExternalName
